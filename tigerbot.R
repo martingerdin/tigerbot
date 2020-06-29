@@ -1,0 +1,114 @@
+#!/usr/bin/env Rscript 
+## tigerbot is a small tool and slack app that allows us to send
+## messages to channels and users in the teambengaltiger workspace
+## from the command line.
+
+## Setup dependencies
+required.packages <- c("argparser", "assertthat", "crayon", "dplyr", "httr", "dotenv", "jsonlite", "stringr")
+packages.to.install <- !sapply(required.packages, requireNamespace, quietly = TRUE)
+install <- identical(as.character(commandArgs(trailingOnly = TRUE)[1]), "install")
+if (install)
+    install.packages(required.packages[packages.to.install])
+packages.to.install <- !sapply(required.packages, requireNamespace, quietly = TRUE)
+if (any(packages.to.install))
+    stop (paste0("You have to install the following packages before you can run this script: \n\n",
+                 paste0(required.packages[packages.to.install],
+                        collapse = "\n"), "\n\n",
+                 "Run: \n\n",
+                 "tigerbot install \n\n",
+                 "to do so or install these packages manually."))
+
+## Setup arguments
+parser <- argparser::arg_parser("tigerbot")
+parser <- argparser::add_argument(parser, arg = "name", help = "The name of the user (default) or channel to post to")
+parser <- argparser::add_argument(parser, arg = "message", help = "The message to send", default = "")
+parser <- argparser::add_argument(parser, arg = "--token", help = "The Slack token. The default behaviour is to read this token from the SLACK_TOKEN environment variable. You can define this variable explicitly, for example SLACK_TOKEN='your token here' tigerbot, or in .env in the working directoy. You can override the default behaviour by providing the token here.")
+parser <- argparser::add_argument(parser, arg = "--channel", help = "Indicates that name is a channel rather than a user", flag = TRUE)
+parser <- argparser::add_argument(parser, arg = "--no-confirm", help = "Indicates that tigerbot should skip asking for confirmation before sending the message", flag = TRUE)
+arguments <- argparser::parse_args(parser)
+attach(arguments[-1]) # The first entry is empty and an empty entry cannot be attached
+
+## Check arguments
+at <- function(x) invisible(assertthat::assert_that(x))
+at(is.character(name))
+at(is.character(message))
+at(is.character(token) | is.na(token))
+at(is.logical(channel))
+at(is.logical(no_confirm))
+
+## Define pipe operator, or convenience
+`%>%` <- dplyr::`%>%`
+
+## Get slack token
+if (is.na(token)) {
+    token <- Sys.getenv("SLACK_TOKEN")
+    if (token == "" & file.exists(".env"))
+        dotenv::load_dot_env()
+    token <- Sys.getenv("SLACK_TOKEN")        
+}
+if (token == "") {
+    stop (stringr::str_wrap("The SLACK_TOKEN environment variable is not set. Either set it, put it in .env, or supply the token using the --token argument"))
+}
+
+## Define authentication string
+auth <- paste0("Bearer ", token)
+
+## Define base url
+base.url <- "https://slack.com/api/"
+
+## Find user or channel ID
+cat(paste0("Contacting teambengaltiger...\n"))
+identity <- "member"
+method <- "users.list"
+table.name <- "members"
+if (channel) {
+    method <- "conversations.list"
+    table.name <- "channels"
+    identity <- "channel"
+}
+get.url <- paste0(base.url, method)
+get.response <- httr::GET(url = get.url, httr::add_headers(Authorization = auth)) %>%
+    httr::content(as = "text") %>%
+    jsonlite::fromJSON()
+if (!get.response$ok)
+    stop (stringr::str_wrap(paste0("Your request to the Slack API failed with the error: ", response$error)))
+info <- get.response[[table.name]] %>%
+    dplyr::filter(name == {{name}})
+if (nrow(info) == 0)
+    stop (stringr::str_wrap(paste0("There is no ", identity, " named ", name)))
+id <- info %>%
+    dplyr::select(id) %>%
+    as.character()
+cat(paste0("A ", identity, " named ", name, " was found \n\n"))
+
+## Ask for confirmation
+show <- list(member = list(real_name = "This member's real name is "),
+             channel = list())
+if (!no_confirm) {
+    cat(paste0("The message will be posted to the ", identity, " ", name, ". \n"))
+    lapply(seq_along(show[[identity]]), function(i) {
+        entry <- show[[identity]]
+        item.name <- names(entry)[i]
+        text <- entry[i]
+        cat(paste0(text, info[[item.name]], ". \n"))
+    })
+    valid <- FALSE
+    cat("\nAre you sure you want to post the message? (Yes/No) \n")
+    while (!valid) {
+        answer <- readLines(con = "stdin", n = 1)
+        valid <- any(grepl(answer, c("yes", "no"), ignore.case = TRUE))
+        if (!valid)
+            cat("Please type either yes or no")
+    }
+    if (answer == "n")
+        stop ("Posting message aborted")
+}
+ 
+## Post message
+post.url <- paste0(base.url, "chat.postMessage")
+post.response <- httr::POST(url = post.url, httr::add_headers(Authorization = auth), body = list(channel = id, text = message)) %>%
+    httr::content(as = "text") %>%
+    jsonlite::fromJSON()
+if (!post.response$ok)
+    stop (stringr::str_wrap(paste0("Your request to the Slack API failed with the error: ", response$error)))
+cat(crayon::green(paste0("\n\nMessage successfully posted to ", name, "!\n\n")))
