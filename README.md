@@ -1,11 +1,9 @@
-![](tiger-emoji.png)
+![](tiger-emoji-small.png)
 
 # tigerbot
 
 [![Automated Release Notes by gren](https://img.shields.io/badge/%F0%9F%A4%96-release%20notes-00B2EE.svg)](https://github-tools.github.io/github-release-notes/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
-**`tigerbot` is really a cub more than a fully grown tiger**
 
 `tigerbot` is a small utility and slack app that allows the user to
 communicate with `teambengaltiger` over the command line. We use it to
