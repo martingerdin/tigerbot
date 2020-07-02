@@ -29,7 +29,7 @@ Or:
 ```
 mkdir tigerbot
 cd tigerbot
-wget https://github.com/martingerdin/tigerbot/master/tigerbot
+wget https://raw.githubusercontent.com/martingerdin/tigerbot/master/tigerbot
 chmod +x tigerbot
 ```
 
