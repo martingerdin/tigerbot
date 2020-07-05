@@ -20,7 +20,7 @@ if (any(packages.to.install))
 
 ## Setup arguments
 parser <- argparser::arg_parser("tigerbot")
-parser <- argparser::add_argument(parser, arg = "name", help = "The name of the user (default) or channel to post to")
+parser <- argparser::add_argument(parser, arg = "name", help = "The name of the user or channel to post to. Defaults to user in which case name is assumed to be the users real name")
 parser <- argparser::add_argument(parser, arg = "message", help = "The message to send", default = "")
 parser <- argparser::add_argument(parser, arg = "--token", help = "The Slack token. The default behaviour is to read this token from the SLACK_TOKEN environment variable. You can define this variable explicitly, for example SLACK_TOKEN='your token here' tigerbot, or in .env in the working directoy. You can override the default behaviour by providing the token here.")
 parser <- argparser::add_argument(parser, arg = "--channel", help = "Indicates that name is a channel rather than a user", flag = TRUE)
@@ -36,7 +36,7 @@ at(is.character(token) | is.na(token))
 at(is.logical(channel))
 at(is.logical(no_confirm))
 
-## Define pipe operator, or convenience
+## Define pipe operator, for convenience
 `%>%` <- dplyr::`%>%`
 
 ## Get slack token
@@ -61,10 +61,12 @@ cat(paste0("Contacting teambengaltiger...\n"))
 identity <- "member"
 method <- "users.list"
 table.name <- "members"
+name.name <- "real_name"
 if (channel) {
     method <- "conversations.list"
     table.name <- "channels"
     identity <- "channel"
+    name.name <- "name"
 }
 get.url <- paste0(base.url, method)
 get.response <- httr::GET(url = get.url, httr::add_headers(Authorization = auth)) %>%
@@ -72,10 +74,15 @@ get.response <- httr::GET(url = get.url, httr::add_headers(Authorization = auth)
     jsonlite::fromJSON()
 if (!get.response$ok)
     stop (stringr::str_wrap(paste0("Your request to the Slack API failed with the error: ", response$error)))
-info <- get.response[[table.name]] %>%
-    dplyr::filter(name == {{name}})
+info.data <- get.response[[table.name]]
+info.names <- info.data[, name.name]
+info <- info.data[grepl(pattern = name, x = info.names, ignore.case = TRUE), ]
 if (nrow(info) == 0)
     stop (stringr::str_wrap(paste0("There is no ", identity, " named ", name)))
+if (nrow(info) > 1)
+    stop (stringr::str_wrap(paste0("There are more than one ", identity, " matching ", name, ":\n",
+                                   paste0(info[, name.name], collapse = ", "), ". ",
+                                   "Please provide a more specific name.")))
 id <- info %>%
     dplyr::select(id) %>%
     as.character()
