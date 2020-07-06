@@ -43,10 +43,15 @@ if (email & channel)
 `%>%` <- dplyr::`%>%`
 
 ## Get slack token
+current.path <- "."
+default.path <- paste0("/opt/tigerbot")
+paths <- c(current.path, default.path)
+files <- sapply(paths, function(x) file.path(x, ".env"))
 if (is.na(token)) {
+    exists <- sapply(files, file.exists)
     token <- Sys.getenv("SLACK_TOKEN")
-    if (token == "" & file.exists(".env"))
-        dotenv::load_dot_env()
+    if (token == "" & any(exists))
+        dotenv::load_dot_env(files[exists][1])
     token <- Sys.getenv("SLACK_TOKEN")        
 }
 if (token == "") 
