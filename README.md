@@ -20,42 +20,44 @@ installed using `tigerbot` itself.
 
 ```
 git clone https://github.com/martingerdin/tigerbot.git
-cd tigerbot
-chmod +x tigerbot
+sudo mv tigerbot /opt/
+sudo chmod +x /opt/tigerbot/tigerbot
+sudo ln -s /opt/tigerbot/tigerbot /usr/local/bin/ # symlink into /urs/local/bin
 ```
 
 Or:
 
 ```
-mkdir tigerbot
-cd tigerbot
-wget https://raw.githubusercontent.com/martingerdin/tigerbot/master/tigerbot
-chmod +x tigerbot
+sudo mkdir /opt/tigerbot
+sudo wget https://raw.githubusercontent.com/martingerdin/tigerbot/master/tigerbot -P /opt/tigerbot/
+sudo chmod +x /opt/tigerbot/tigerbot
+sudo ln -s /opt/tigerbot/tigerbot /usr/local/bin/ # symlink into /urs/local/bin
 ```
 
 ## Usage
 
 Note that to use `tigerbot` you need a Slack API token. `tigerbot`
 assumes that this token is stored in a `.env` file in the current
-working directory.
+working directory or in the default installation directory
+`/opt/tigerbot/`.
 
 ```
 # Get help
-./tigerbot --help
+tigerbot --help
 
 # Install required R packages
-./tigerbot install
+tigerbot install
 
 # Send IM to member using its full name 
-./tigerbot Gary "Hello, I'm tigerbot!"
+tigerbot Gary "Hello, I'm tigerbot!"
 
 # Send IM to member using its email
-./tigerbot gary@example.com "Hello, I'm tigerbot!" --email
+tigerbot gary@example.com "Hello, I'm tigerbot!" --email
 
 # Send message to channel
-./tigerbot general "Hello, I'm tigerbot" --channel
+tigerbot general "Hello, I'm tigerbot" --channel
 
 # Send message directly, without being prompted to confirm
-./tigerbot general "Hello, I'm tigerbot" --channel --no-confirm
+tigerbot general "Hello, I'm tigerbot" --channel --no-confirm
 ```
 
