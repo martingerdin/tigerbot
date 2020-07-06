@@ -41,13 +41,16 @@ working directory.
 
 ```
 # Get help
-./tigerbot
+./tigerbot --help
 
 # Install required R packages
 ./tigerbot install
 
-# Send IM to member
-./tigerbot username "Hello, I'm tigerbot!"
+# Send IM to member using its full name 
+./tigerbot Gary "Hello, I'm tigerbot!"
+
+# Send IM to member using its email
+./tigerbot gary@example.com "Hello, I'm tigerbot!" --email
 
 # Send message to channel
 ./tigerbot general "Hello, I'm tigerbot" --channel
