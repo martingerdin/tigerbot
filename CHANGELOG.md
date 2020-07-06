@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.3 (06/07/2020)
+
+#### Bug Fixes:
+
+- [#4](https://github.com/martingerdin/tigerbot/issues/4) Fix error message when request fails 
+
+---
+
 ## v1.0.2 (06/07/2020)
 
 #### Enhancements:
