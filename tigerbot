@@ -91,7 +91,7 @@ get.response <- httr::GET(url = get.url, header, query = query) %>%
     httr::content(as = "text") %>%
     jsonlite::fromJSON()
 if (!get.response$ok)
-    stop (stringr::str_wrap(paste0("Your request to the Slack API failed with the error: ", response$error)))
+    stop (stringr::str_wrap(paste0("Your request to the Slack API failed with the error: ", get.response$error)))
 info.data <- get.response[[table.name]]
 if (email) {
     info <- info.data
