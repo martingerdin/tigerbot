@@ -1,6 +1,6 @@
 ![](tiger-emoji-small.png)
 
-# tigerbot (v1.0.3)
+# tigerbot (v1.0.4)
 
 [![Automated Release Notes by gren](https://img.shields.io/badge/%F0%9F%A4%96-release%20notes-00B2EE.svg)](https://github-tools.github.io/github-release-notes/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
