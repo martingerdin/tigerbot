@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.4 (30/08/2020)
+
+#### Enhancements:
+
+- [#5](https://github.com/martingerdin/tigerbot/issues/5) Allow tigerbot to upload and share files 
+
+---
+
 ## v1.0.3 (06/07/2020)
 
 #### Bug Fixes:
