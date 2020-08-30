@@ -22,9 +22,12 @@ if (any(packages.to.install))
 parser <- argparser::arg_parser("tigerbot")
 parser <- argparser::add_argument(parser, arg = "name", help = "The name of the user or channel to post to. Defaults to user in which case name is assumed to be the users real name")
 parser <- argparser::add_argument(parser, arg = "message", help = "The message to send", default = "")
+parser <- argparser::add_argument(parser, arg = "--file-title", help = "The title of the file. Ignored unless the flag --file is used.", default = "")
+parser <- argparser::add_argument(parser, arg = "--initial-comment", help = "The message text introducing the file in specified channels. Ignored unless the flag --file is used.", default = "")
 parser <- argparser::add_argument(parser, arg = "--token", help = "The Slack token. The default behaviour is to read this token from the SLACK_TOKEN environment variable. You can define this variable explicitly, for example SLACK_TOKEN='your token here' tigerbot, or in .env in the working directoy. You can override the default behaviour by providing the token here.")
 parser <- argparser::add_argument(parser, arg = "--email", help = "Indicates that name is a user email rather than name", flag = TRUE)
 parser <- argparser::add_argument(parser, arg = "--channel", help = "Indicates that name is a channel rather than a user", flag = TRUE)
+parser <- argparser::add_argument(parser, arg = "--file", help = "Indicates that message is a file name that should be shared with the user or channel specified", flag = TRUE)
 parser <- argparser::add_argument(parser, arg = "--no-confirm", help = "Indicates that tigerbot should skip asking for confirmation before sending the message", flag = TRUE)
 arguments <- argparser::parse_args(parser)
 attach(arguments[-1]) # The first entry is empty and an empty entry cannot be attached
@@ -39,6 +42,13 @@ at(is.logical(channel))
 at(is.logical(no_confirm))
 if (email & channel)
     stop ("Both mail and channel cannot be set, choose one")
+at(is.logical(file))
+if (file) {
+    at(file.exists(message))
+    at(is.character(file_title))
+    at(is.character(initial_comment))
+}
+
 ## Define pipe operator, for convenience
 `%>%` <- dplyr::`%>%`
 
@@ -113,10 +123,16 @@ if (email) {
 }
 
 ## Ask for confirmation
-cat(paste0("The message will be posted to the ", identity, " ", name, ". \n"))
+ask.message <- "The message will be posted to the "
+if (file)
+    ask.message <- paste0("The file ", message, " will uploaded to the ")
+cat(paste0(ask.message, identity, " ", name, ". \n"))
 if (!no_confirm) {
     valid <- FALSE
-    cat("\nAre you sure you want to post the message? (Yes/No) \n")
+    confirm.message <- "\nAre you sure you want to post the message? (Yes/No) \n"
+    if (file)
+            confirm.message <- "\nAre you sure you want to upload the file? (Yes/No) \n"
+    cat(confirm.message)
     while (!valid) {
         answer <- readLines(con = "stdin", n = 1)
         valid <- any(grepl(answer, c("yes", "no"), ignore.case = TRUE))
@@ -128,10 +144,24 @@ if (!no_confirm) {
 }
  
 ## Post message
-post.url <- paste0(base.url, "chat.postMessage")
-post.response <- httr::POST(url = post.url, httr::add_headers(Authorization = auth), body = list(channel = id, text = message)) %>%
+post.method <- "chat.postMessage"
+header <- httr::add_headers(Authorization = auth)
+body <- list(channel = id, text = message)
+if (file) {
+    post.method <- "files.upload"
+    body <- list(channels = id, filename = message, file = httr::upload_file(message))
+    if (file_title != "")
+        body$title <- file_title
+    if (initial_comment != "")
+        body$initial_comment <- initial_comment
+}
+post.url <- paste0(base.url, post.method)
+post.response <- httr::POST(url = post.url, header, body = body) %>%
     httr::content(as = "text") %>%
     jsonlite::fromJSON()
 if (!post.response$ok)
-    stop (stringr::str_wrap(paste0("Your request to the Slack API failed with the error: ", response$error)))
-cat(crayon::green(paste0("\n\nMessage successfully posted to the ", identity, " ", name, "!\n\n")))
+    stop (stringr::str_wrap(paste0("Your request to the Slack API failed with the error: ", post.response$error)))
+success.message <- "\n\nMessage successfully posted to the "
+if (file)
+    success.message <- "\n\nFile successfully uploaded to the "
+cat(crayon::green(paste0(success.message, identity, " ", name, "!\n\n")))

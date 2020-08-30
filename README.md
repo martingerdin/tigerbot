@@ -59,5 +59,12 @@ tigerbot general "Hello, I'm tigerbot" --channel
 
 # Send message directly, without being prompted to confirm
 tigerbot general "Hello, I'm tigerbot" --channel --no-confirm
+
+# Send file to channel
+tigerbot general foo.txt --channel --file
+
+# Send file with title and initial comment
+tigerbot general foo.txt --channel --file --file-title Bar \
+  --initial-comment "A file with title and comment"
 ```
 
